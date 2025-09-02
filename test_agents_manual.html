@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lyzr Agent Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .agent-test {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .agent-test h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .status {
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .status.success { background: #d4edda; color: #155724; }
+        .status.error { background: #f8d7da; color: #721c24; }
+        .status.pending { background: #fff3cd; color: #856404; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        .response {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 3px;
+            padding: 10px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .test-all {
+            background: #28a745;
+            font-size: 16px;
+            padding: 15px 30px;
+        }
+        .test-all:hover { background: #218838; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Lyzr Agent Test Suite</h1>
+        <p>This page tests all 4 published Lyzr agents to verify they're working correctly.</p>
+        
+        <button class="test-all" onclick="testAllAgents()">🚀 Test All Agents</button>
+        
+        <div id="results"></div>
+        
+        <div class="agent-test">
+            <h3>1. IEP Intake Agent</h3>
+            <p><strong>ID:</strong> 68b3330a25170ae5463dc24d</p>
+            <button onclick="testAgent('iep-intake')">Test Agent</button>
+            <div id="iep-intake-status" class="status pending">Pending</div>
+            <div id="iep-intake-response" class="response" style="display: none;"></div>
+        </div>
+        
+        <div class="agent-test">
+            <h3>2. Redaction & QA Agent</h3>
+            <p><strong>ID:</strong> 68b3338b25170ae5463dc251</p>
+            <button onclick="testAgent('redaction-qa')">Test Agent</button>
+            <div id="redaction-qa-status" class="status pending">Pending</div>
+            <div id="redaction-qa-response" class="response" style="display: none;"></div>
+        </div>
+        
+        <div class="agent-test">
+            <h3>3. Rubric Scoring Agent</h3>
+            <p><strong>ID:</strong> 68b333c5531308af6cadec9a</p>
+            <button onclick="testAgent('rubric-scoring')">Test Agent</button>
+            <div id="rubric-scoring-status" class="status pending">Pending</div>
+            <div id="rubric-scoring-response" class="response" style="display: none;"></div>
+        </div>
+        
+        <div class="agent-test">
+            <h3>4. Feedback & Routing Agent</h3>
+            <p><strong>ID:</strong> 68b333fc531308af6cadec9b</p>
+            <button onclick="testAgent('feedback-routing')">Test Agent</button>
+            <div id="feedback-routing-status" class="status pending">Pending</div>
+            <div id="feedback-routing-response" class="response" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = 'sk-default-umuEtNZJCnYbBCmy448B42Neb90nTx5W';
+        const BASE_URL = 'https://api.lyzr.ai';
+        
+        const agents = {
+            'iep-intake': {
+                id: '68b3330a25170ae5463dc24d',
+                name: 'IEP Intake Agent',
+                message: 'Please extract key information from this IEP document. Document ID: test_doc_123'
+            },
+            'redaction-qa': {
+                id: '68b3338b25170ae5463dc251',
+                name: 'Redaction & QA Agent',
+                message: 'Please redact PII and validate document structure for IEP document ID: test_doc_123'
+            },
+            'rubric-scoring': {
+                id: '68b333c5531308af6cadec9a',
+                name: 'Rubric Scoring Agent',
+                message: 'Please apply federal/state rubrics for compliance scoring on IEP document ID: test_doc_123'
+            },
+            'feedback-routing': {
+                id: '68b333fc531308af6cadec9b',
+                name: 'Feedback & Routing Agent',
+                message: 'Please review IEP document ID: test_doc_123 and generate revision guidance'
+            }
+        };
+        
+        async function testAgent(agentKey) {
+            const agent = agents[agentKey];
+            const statusEl = document.getElementById(`${agentKey}-status`);
+            const responseEl = document.getElementById(`${agentKey}-response`);
+            
+            statusEl.textContent = 'Testing...';
+            statusEl.className = 'status pending';
+            responseEl.style.display = 'none';
+            
+            try {
+                console.log(`Testing ${agent.name}...`);
+                
+                const response = await fetch(`${BASE_URL}/v1/agents/${agent.id}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: agent.message,
+                        stream: false
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    statusEl.textContent = `✅ SUCCESS (HTTP ${response.status})`;
+                    statusEl.className = 'status success';
+                    responseEl.textContent = JSON.stringify(data, null, 2);
+                    responseEl.style.display = 'block';
+                    console.log(`${agent.name} responded successfully:`, data);
+                } else {
+                    const errorData = await response.text();
+                    statusEl.textContent = `❌ ERROR (HTTP ${response.status})`;
+                    statusEl.className = 'status error';
+                    responseEl.textContent = `Error: ${response.status} ${response.statusText}\n${errorData}`;
+                    responseEl.style.display = 'block';
+                    console.error(`${agent.name} failed:`, response.status, errorData);
+                }
+                
+            } catch (error) {
+                statusEl.textContent = `❌ NETWORK ERROR`;
+                statusEl.className = 'status error';
+                responseEl.textContent = `Network Error: ${error.message}`;
+                responseEl.style.display = 'block';
+                console.error(`${agent.name} network error:`, error);
+            }
+        }
+        
+        async function testAllAgents() {
+            console.log('Testing all agents...');
+            const resultsEl = document.getElementById('results');
+            resultsEl.innerHTML = '<h2>🧪 Testing All Agents...</h2>';
+            
+            for (const agentKey of Object.keys(agents)) {
+                await testAgent(agentKey);
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second between tests
+            }
+            
+            // Count results
+            const successCount = document.querySelectorAll('.status.success').length;
+            const errorCount = document.querySelectorAll('.status.error').length;
+            const totalCount = Object.keys(agents).length;
+            
+            resultsEl.innerHTML = `
+                <h2>📊 Test Results Summary</h2>
+                <p><strong>✅ Successful:</strong> ${successCount}/${totalCount}</p>
+                <p><strong>❌ Failed:</strong> ${errorCount}/${totalCount}</p>
+                <p><strong>📅 Tested at:</strong> ${new Date().toLocaleString()}</p>
+            `;
+            
+            if (successCount === totalCount) {
+                resultsEl.innerHTML += '<p style="color: green; font-weight: bold;">🎉 ALL AGENTS WORKING! Your application is ready for production.</p>';
+            } else if (successCount > 0) {
+                resultsEl.innerHTML += '<p style="color: orange; font-weight: bold;">⚠️ SOME AGENTS WORKING. Check failed agents.</p>';
+            } else {
+                resultsEl.innerHTML += '<p style="color: red; font-weight: bold;">❌ NO AGENTS WORKING. Check agent publication status.</p>';
+            }
+        }
+        
+        // Auto-test on page load
+        window.addEventListener('load', () => {
+            console.log('Lyzr Agent Test Suite loaded');
+            console.log('Click "Test All Agents" to verify your published agents');
+        });
+    </script>
+</body>
+</html>
