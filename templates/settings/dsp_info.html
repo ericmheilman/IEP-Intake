@@ -1,0 +1,760 @@
+{% extends 'base.html' %}
+
+{% block title %}Settings - DSP Information{% endblock %}
+
+{% block content %}
+<div class="settings-container">
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Left Sidebar - Settings Navigation -->
+      <div class="col-md-3">
+        {% include 'settings/_sidebar.html' %}
+      </div>
+      
+      <!-- Main Content Area -->
+      <div class="col-md-9">
+        <!-- DSP Information Form -->
+        <div class="dsp-form-container">
+          <!-- Form Header -->
+          <div class="form-header">
+            <h2><i class="fas fa-building"></i> DSP Information Settings</h2>
+            <p>Configure your Distilled Spirits Plant (DSP) information and contact details</p>
+          </div>
+
+          <!-- Success/Error Messages -->
+          <div id="message-container"></div>
+
+          <!-- Main Form -->
+          <form id="dsp-info-form" method="POST" action="{{ url_for('settings.dsp_info') }}" novalidate>
+            {{ csrf_token() }}
+            
+            <!-- Distillery Settings Section -->
+            <div class="form-section">
+              <h3 class="section-title">
+                <i class="fas fa-cog"></i> Distillery Settings
+              </h3>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="country" class="form-label">Country <span class="text-danger">*</span></label>
+                  <select class="form-control" id="country" name="country" required>
+                    <option value="">Select Country</option>
+                    <option value="US" {% if form_data and form_data.country == 'US' %}selected{% endif %}>United States</option>
+                    <option value="CA" {% if form_data and form_data.country == 'CA' %}selected{% endif %}>Canada</option>
+                    <option value="UK" {% if form_data and form_data.country == 'UK' %}selected{% endif %}>United Kingdom</option>
+                    <option value="IE" {% if form_data and form_data.country == 'IE' %}selected{% endif %}>Ireland</option>
+                    <option value="JP" {% if form_data and form_data.country == 'JP' %}selected{% endif %}>Japan</option>
+                    <option value="SC" {% if form_data and form_data.country == 'SC' %}selected{% endif %}>Scotland</option>
+                    <option value="other" {% if form_data and form_data.country == 'other' %}selected{% endif %}>Other</option>
+                  </select>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label for="proprietor_name" class="form-label">Name of Proprietor <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="proprietor_name" name="proprietor_name" 
+                         value="{% if form_data %}{{ form_data.proprietor_name }}{% endif %}" required 
+                         placeholder="Enter proprietor's full name">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label for="business_name" class="form-label">Does Business As</label>
+                  <input type="text" class="form-control" id="business_name" name="business_name" 
+                         value="{% if form_data %}{{ form_data.business_name }}{% endif %}" 
+                         placeholder="Enter business name (if different)">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label for="timezone" class="form-label">Time Zone <span class="text-danger">*</span></label>
+                  <select class="form-control" id="timezone" name="timezone" required>
+                    <option value="">Select Time Zone</option>
+                    <option value="America/New_York" {% if form_data and form_data.timezone == 'America/New_York' %}selected{% endif %}>Eastern Time (ET)</option>
+                    <option value="America/Chicago" {% if form_data and form_data.timezone == 'America/Chicago' %}selected{% endif %}>Central Time (CT)</option>
+                    <option value="America/Denver" {% if form_data and form_data.timezone == 'America/Denver' %}selected{% endif %}>Mountain Time (MT)</option>
+                    <option value="America/Los_Angeles" {% if form_data and form_data.timezone == 'America/Los_Angeles' %}selected{% endif %}>Pacific Time (PT)</option>
+                    <option value="America/Anchorage" {% if form_data and form_data.timezone == 'America/Anchorage' %}selected{% endif %}>Alaska Time (AKT)</option>
+                    <option value="Pacific/Honolulu" {% if form_data and form_data.timezone == 'Pacific/Honolulu' %}selected{% endif %}>Hawaii Time (HST)</option>
+                  </select>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label for="start_month" class="form-label">Start Month <span class="text-danger">*</span></label>
+                  <input type="month" class="form-control" id="start_month" name="start_month" 
+                         value="{% if form_data %}{{ form_data.start_month }}{% endif %}" required>
+                </div>
+              </div>
+            </div>
+
+            <!-- Billing/Office Address Section -->
+            <div class="form-section">
+              <h3 class="section-title">
+                <i class="fas fa-map-marker-alt"></i> Billing/Office Address
+              </h3>
+              <div class="row">
+                <div class="col-12 mb-3">
+                  <label for="billing_address1" class="form-label">Address 1 <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="billing_address1" name="billing_address1" 
+                         value="{% if form_data %}{{ form_data.billing_address1 }}{% endif %}" required 
+                         placeholder="Street address, P.O. box, company name, c/o">
+                </div>
+
+                <div class="col-12 mb-3">
+                  <label for="billing_address2" class="form-label">Address 2</label>
+                  <input type="text" class="form-control" id="billing_address2" name="billing_address2" 
+                         value="{% if form_data %}{{ form_data.billing_address2 }}{% endif %}" 
+                         placeholder="Apartment, suite, unit, building, floor, etc.">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                  <label for="billing_city" class="form-label">City <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="billing_city" name="billing_city" 
+                         value="{% if form_data %}{{ form_data.billing_city }}{% endif %}" required 
+                         placeholder="Enter city">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                  <label for="billing_state" class="form-label">State/Region <span class="text-danger">*</span></label>
+                  <select class="form-control" id="billing_state" name="billing_state" required>
+                    <option value="">Select State</option>
+                    <option value="AL" {% if form_data and form_data.billing_state == 'AL' %}selected{% endif %}>Alabama</option>
+                    <option value="AK" {% if form_data and form_data.billing_state == 'AK' %}selected{% endif %}>Alaska</option>
+                    <option value="AZ" {% if form_data and form_data.billing_state == 'AZ' %}selected{% endif %}>Arizona</option>
+                    <option value="AR" {% if form_data and form_data.billing_state == 'AR' %}selected{% endif %}>Arkansas</option>
+                    <option value="CA" {% if form_data and form_data.billing_state == 'CA' %}selected{% endif %}>California</option>
+                    <option value="CO" {% if form_data and form_data.billing_state == 'CO' %}selected{% endif %}>Colorado</option>
+                    <option value="CT" {% if form_data and form_data.billing_state == 'CT' %}selected{% endif %}>Connecticut</option>
+                    <option value="DE" {% if form_data and form_data.billing_state == 'DE' %}selected{% endif %}>Delaware</option>
+                    <option value="FL" {% if form_data and form_data.billing_state == 'FL' %}selected{% endif %}>Florida</option>
+                    <option value="GA" {% if form_data and form_data.billing_state == 'GA' %}selected{% endif %}>Georgia</option>
+                    <option value="HI" {% if form_data and form_data.billing_state == 'HI' %}selected{% endif %}>Hawaii</option>
+                    <option value="ID" {% if form_data and form_data.billing_state == 'ID' %}selected{% endif %}>Idaho</option>
+                    <option value="IL" {% if form_data and form_data.billing_state == 'IL' %}selected{% endif %}>Illinois</option>
+                    <option value="IN" {% if form_data and form_data.billing_state == 'IN' %}selected{% endif %}>Indiana</option>
+                    <option value="IA" {% if form_data and form_data.billing_state == 'IA' %}selected{% endif %}>Iowa</option>
+                    <option value="KS" {% if form_data and form_data.billing_state == 'KS' %}selected{% endif %}>Kansas</option>
+                    <option value="KY" {% if form_data and form_data.billing_state == 'KY' %}selected{% endif %}>Kentucky</option>
+                    <option value="LA" {% if form_data and form_data.billing_state == 'LA' %}selected{% endif %}>Louisiana</option>
+                    <option value="ME" {% if form_data and form_data.billing_state == 'ME' %}selected{% endif %}>Maine</option>
+                    <option value="MD" {% if form_data and form_data.billing_state == 'MD' %}selected{% endif %}>Maryland</option>
+                    <option value="MA" {% if form_data and form_data.billing_state == 'MA' %}selected{% endif %}>Massachusetts</option>
+                    <option value="MI" {% if form_data and form_data.billing_state == 'MI' %}selected{% endif %}>Michigan</option>
+                    <option value="MN" {% if form_data and form_data.billing_state == 'MN' %}selected{% endif %}>Minnesota</option>
+                    <option value="MS" {% if form_data and form_data.billing_state == 'MS' %}selected{% endif %}>Mississippi</option>
+                    <option value="MO" {% if form_data and form_data.billing_state == 'MO' %}selected{% endif %}>Missouri</option>
+                    <option value="MT" {% if form_data and form_data.billing_state == 'MT' %}selected{% endif %}>Montana</option>
+                    <option value="NE" {% if form_data and form_data.billing_state == 'NE' %}selected{% endif %}>Nebraska</option>
+                    <option value="NV" {% if form_data and form_data.billing_state == 'NV' %}selected{% endif %}>Nevada</option>
+                    <option value="NH" {% if form_data and form_data.billing_state == 'NH' %}selected{% endif %}>New Hampshire</option>
+                    <option value="NJ" {% if form_data and form_data.billing_state == 'NJ' %}selected{% endif %}>New Jersey</option>
+                    <option value="NM" {% if form_data and form_data.billing_state == 'NM' %}selected{% endif %}>New Mexico</option>
+                    <option value="NY" {% if form_data and form_data.billing_state == 'NY' %}selected{% endif %}>New York</option>
+                    <option value="NC" {% if form_data and form_data.billing_state == 'NC' %}selected{% endif %}>North Carolina</option>
+                    <option value="ND" {% if form_data and form_data.billing_state == 'ND' %}selected{% endif %}>North Dakota</option>
+                    <option value="OH" {% if form_data and form_data.billing_state == 'OH' %}selected{% endif %}>Ohio</option>
+                    <option value="OK" {% if form_data and form_data.billing_state == 'OK' %}selected{% endif %}>Oklahoma</option>
+                    <option value="OR" {% if form_data and form_data.billing_state == 'OR' %}selected{% endif %}>Oregon</option>
+                    <option value="PA" {% if form_data and form_data.billing_state == 'PA' %}selected{% endif %}>Pennsylvania</option>
+                    <option value="RI" {% if form_data and form_data.billing_state == 'RI' %}selected{% endif %}>Rhode Island</option>
+                    <option value="SC" {% if form_data and form_data.billing_state == 'SC' %}selected{% endif %}>South Carolina</option>
+                    <option value="SD" {% if form_data and form_data.billing_state == 'SD' %}selected{% endif %}>South Dakota</option>
+                    <option value="TN" {% if form_data and form_data.billing_state == 'TN' %}selected{% endif %}>Tennessee</option>
+                    <option value="TX" {% if form_data and form_data.billing_state == 'TX' %}selected{% endif %}>Texas</option>
+                    <option value="UT" {% if form_data and form_data.billing_state == 'UT' %}selected{% endif %}>Utah</option>
+                    <option value="VT" {% if form_data and form_data.billing_state == 'VT' %}selected{% endif %}>Vermont</option>
+                    <option value="VA" {% if form_data and form_data.billing_state == 'VA' %}selected{% endif %}>Virginia</option>
+                    <option value="WA" {% if form_data and form_data.billing_state == 'WA' %}selected{% endif %}>Washington</option>
+                    <option value="WV" {% if form_data and form_data.billing_state == 'WV' %}selected{% endif %}>West Virginia</option>
+                    <option value="WI" {% if form_data and form_data.billing_state == 'WI' %}selected{% endif %}>Wisconsin</option>
+                    <option value="WY" {% if form_data and form_data.billing_state == 'WY' %}selected{% endif %}>Wyoming</option>
+                  </select>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                  <label for="billing_zip" class="form-label">Zip Code <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="billing_zip" name="billing_zip" 
+                         value="{% if form_data %}{{ form_data.billing_zip }}{% endif %}" required 
+                         placeholder="12345" pattern="[0-9]{5}(-[0-9]{4})?">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label for="billing_phone" class="form-label">Phone Number <span class="text-danger">*</span></label>
+                  <input type="tel" class="form-control" id="billing_phone" name="billing_phone" 
+                         value="{% if form_data %}{{ form_data.billing_phone }}{% endif %}" required 
+                         placeholder="(555) 123-4567" pattern="[0-9\s\(\)\-\+]+">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <div class="form-check mt-4">
+                    <input class="form-check-input" type="checkbox" id="same_as_shipping" name="same_as_shipping" 
+                           {% if form_data and form_data.same_as_shipping %}checked{% endif %}>
+                    <label class="form-check-label" for="same_as_shipping">
+                      Same as Shipping Address
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Conditional Shipping Address Section -->
+            <div class="form-section" id="shipping-section">
+              <h3 class="section-title">
+                <i class="fas fa-truck"></i> Shipping Address
+              </h3>
+              <div class="row">
+                <div class="col-12 mb-3">
+                  <label for="shipping_address1" class="form-label">Address 1 <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="shipping_address1" name="shipping_address1" 
+                         value="{% if form_data %}{{ form_data.shipping_address1 }}{% endif %}" 
+                         placeholder="Street address, P.O. box, company name, c/o">
+                </div>
+
+                <div class="col-12 mb-3">
+                  <label for="shipping_address2" class="form-label">Address 2</label>
+                  <input type="text" class="form-control" id="shipping_address2" name="shipping_address2" 
+                         value="{% if form_data %}{{ form_data.shipping_address2 }}{% endif %}" 
+                         placeholder="Apartment, suite, unit, building, floor, etc.">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                  <label for="shipping_city" class="form-label">City <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="shipping_city" name="shipping_city" 
+                         value="{% if form_data %}{{ form_data.shipping_city }}{% endif %}" 
+                         placeholder="Enter city">
+                </div>
+
+                <div class="col-md-4 mb-3">
+                  <label for="shipping_state" class="form-label">State/Region <span class="text-danger">*</span></label>
+                  <select class="form-control" id="shipping_state" name="shipping_state">
+                    <option value="">Select State</option>
+                    <option value="AL" {% if form_data and form_data.shipping_state == 'AL' %}selected{% endif %}>Alabama</option>
+                    <option value="AK" {% if form_data and form_data.shipping_state == 'AK' %}selected{% endif %}>Alaska</option>
+                    <option value="AZ" {% if form_data and form_data.shipping_state == 'AZ' %}selected{% endif %}>Arizona</option>
+                    <option value="AR" {% if form_data and form_data.shipping_state == 'AR' %}selected{% endif %}>Arkansas</option>
+                    <option value="CA" {% if form_data and form_data.shipping_state == 'CA' %}selected{% endif %}>California</option>
+                    <option value="CO" {% if form_data and form_data.shipping_state == 'CO' %}selected{% endif %}>Colorado</option>
+                    <option value="CT" {% if form_data and form_data.shipping_state == 'CT' %}selected{% endif %}>Connecticut</option>
+                    <option value="DE" {% if form_data and form_data.shipping_state == 'DE' %}selected{% endif %}>Delaware</option>
+                    <option value="FL" {% if form_data and form_data.shipping_state == 'FL' %}selected{% endif %}>Florida</option>
+                    <option value="GA" {% if form_data and form_data.shipping_state == 'GA' %}selected{% endif %}>Georgia</option>
+                    <option value="HI" {% if form_data and form_data.shipping_state == 'HI' %}selected{% endif %}>Hawaii</option>
+                    <option value="ID" {% if form_data and form_data.shipping_state == 'ID' %}selected{% endif %}>Idaho</option>
+                    <option value="IL" {% if form_data and form_data.shipping_state == 'IL' %}selected{% endif %}>Illinois</option>
+                    <option value="IN" {% if form_data and form_data.shipping_state == 'IN' %}selected{% endif %}>Indiana</option>
+                    <option value="IA" {% if form_data and form_data.shipping_state == 'IA' %}selected{% endif %}>Iowa</option>
+                    <option value="KS" {% if form_data and form_data.shipping_state == 'KS' %}selected{% endif %}>Kansas</option>
+                    <option value="KY" {% if form_data and form_data.shipping_state == 'KY' %}selected{% endif %}>Kentucky</option>
+                    <option value="LA" {% if form_data and form_data.shipping_state == 'LA' %}selected{% endif %}>Louisiana</option>
+                    <option value="ME" {% if form_data and form_data.shipping_state == 'ME' %}selected{% endif %}>Maine</option>
+                    <option value="MD" {% if form_data and form_data.shipping_state == 'MD' %}selected{% endif %}>Maryland</option>
+                    <option value="MA" {% if form_data and form_data.shipping_state == 'MA' %}selected{% endif %}>Massachusetts</option>
+                    <option value="MI" {% if form_data and form_data.shipping_state == 'MI' %}selected{% endif %}>Michigan</option>
+                    <option value="MN" {% if form_data and form_data.shipping_state == 'MN' %}selected{% endif %}>Minnesota</option>
+                    <option value="MS" {% if form_data and form_data.shipping_state == 'MS' %}selected{% endif %}>Mississippi</option>
+                    <option value="MO" {% if form_data and form_data.shipping_state == 'MO' %}selected{% endif %}>Missouri</option>
+                    <option value="MT" {% if form_data and form_data.shipping_state == 'MT' %}selected{% endif %}>Montana</option>
+                    <option value="NE" {% if form_data and form_data.shipping_state == 'NE' %}selected{% endif %}>Nebraska</option>
+                    <option value="NV" {% if form_data and form_data.shipping_state == 'NV' %}selected{% endif %}>Nevada</option>
+                    <option value="NH" {% if form_data and form_data.shipping_state == 'NH' %}selected{% endif %}>New Hampshire</option>
+                    <option value="NJ" {% if form_data and form_data.shipping_state == 'NJ' %}selected{% endif %}>New Jersey</option>
+                    <option value="NM" {% if form_data and form_data.shipping_state == 'NM' %}selected{% endif %}>New Mexico</option>
+                    <option value="NY" {% if form_data and form_data.shipping_state == 'NY' %}selected{% endif %}>New York</option>
+                    <option value="NC" {% if form_data and form_data.shipping_state == 'NC' %}selected{% endif %}>North Carolina</option>
+                    <option value="ND" {% if form_data and form_data.shipping_state == 'ND' %}selected{% endif %}>North Dakota</option>
+                    <option value="OH" {% if form_data and form_data.shipping_state == 'OH' %}selected{% endif %}>Ohio</option>
+                    <option value="OK" {% if form_data and form_data.shipping_state == 'OK' %}selected{% endif %}>Oklahoma</option>
+                    <option value="OR" {% if form_data and form_data.shipping_state == 'OR' %}selected{% endif %}>Oregon</option>
+                    <option value="PA" {% if form_data and form_data.shipping_state == 'PA' %}selected{% endif %}>Pennsylvania</option>
+                    <option value="RI" {% if form_data and form_data.shipping_state == 'RI' %}selected{% endif %}>Rhode Island</option>
+                    <option value="SC" {% if form_data and form_data.shipping_state == 'SC' %}selected{% endif %}>South Carolina</option>
+                    <option value="SD" {% if form_data and form_data.shipping_state == 'SD' %}selected{% endif %}>South Dakota</option>
+                    <option value="TN" {% if form_data and form_data.shipping_state == 'TN' %}selected{% endif %}>Tennessee</option>
+                    <option value="TX" {% if form_data and form_data.shipping_state == 'TX' %}selected{% endif %}>Texas</option>
+                    <option value="UT" {% if form_data and form_data.shipping_state == 'UT' %}selected{% endif %}>Utah</option>
+                    <option value="VT" {% if form_data and form_data.shipping_state == 'VT' %}selected{% endif %}>Vermont</option>
+                    <option value="VA" {% if form_data and form_data.shipping_state == 'VA' %}selected{% endif %}>Virginia</option>
+                    <option value="WA" {% if form_data and form_data.shipping_state == 'WA' %}selected{% endif %}>Washington</option>
+                    <option value="WV" {% if form_data and form_data.shipping_state == 'WV' %}selected{% endif %}>West Virginia</option>
+                    <option value="WI" {% if form_data and form_data.shipping_state == 'WI' %}selected{% endif %}>Wisconsin</option>
+                    <option value="WY" {% if form_data and form_data.shipping_state == 'WY' %}selected{% endif %}>Wyoming</option>
+                  </select>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                  <label for="shipping_zip" class="form-label">Zip Code <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" id="shipping_zip" name="shipping_zip" 
+                         value="{% if form_data %}{{ form_data.shipping_zip }}{% endif %}" 
+                         placeholder="12345" pattern="[0-9]{5}(-[0-9]{4})?">
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label for="shipping_phone" class="form-label">Phone Number <span class="text-danger">*</span></label>
+                  <input type="tel" class="form-control" id="shipping_phone" name="shipping_phone" 
+                         value="{% if form_data %}{{ form_data.shipping_phone }}{% endif %}" 
+                         placeholder="(555) 123-4567" pattern="[0-9\s\(\)\-\+]+">
+                </div>
+              </div>
+            </div>
+
+            <!-- Form Buttons -->
+            <div class="form-actions">
+              <button type="button" id="clear-btn" class="btn btn-secondary">
+                <i class="fas fa-eraser"></i> Clear Form
+              </button>
+              <button type="submit" id="submit-btn" class="btn btn-primary">
+                <i class="fas fa-save"></i> Save Settings
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* DSP Form Styling */
+.dsp-form-container {
+  background: #1a2332;
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 1rem 0;
+  border: 1px solid #2d3748;
+}
+
+.form-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #2d3748;
+}
+
+.form-header h2 {
+  color: #63b3ed;
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.form-header h2 i {
+  margin-right: 0.5rem;
+  color: #4299e1;
+}
+
+.form-header p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.form-section {
+  background: #2d3748;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid #4a5568;
+}
+
+.section-title {
+  color: #ffffff;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #4a5568;
+  display: flex;
+  align-items: center;
+}
+
+.section-title i {
+  margin-right: 0.75rem;
+  color: #63b3ed;
+  width: 20px;
+}
+
+.form-label {
+  color: #e2e8f0;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.form-control {
+  background-color: #4a5568;
+  border: 1px solid #718096;
+  border-radius: 6px;
+  color: #ffffff;
+  padding: 0.75rem 1rem;
+  transition: all 0.2s ease;
+}
+
+.form-control:focus {
+  background-color: #2d3748;
+  border-color: #63b3ed;
+  box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.1);
+  color: #ffffff;
+}
+
+.form-control:hover {
+  border-color: #a0aec0;
+}
+
+.form-control::placeholder {
+  color: #a0aec0;
+}
+
+.form-check-input {
+  background-color: #4a5568;
+  border: 1px solid #718096;
+}
+
+.form-check-input:checked {
+  background-color: #63b3ed;
+  border-color: #63b3ed;
+}
+
+.form-check-input:focus {
+  box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.1);
+}
+
+.form-check-label {
+  color: #e2e8f0;
+  font-weight: 500;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #4a5568;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-primary {
+  background-color: #63b3ed;
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background-color: #4299e1;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background-color: #718096;
+  color: #ffffff;
+}
+
+.btn-secondary:hover {
+  background-color: #4a5568;
+  transform: translateY(-1px);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Message styling */
+.alert {
+  padding: 1rem 1.25rem;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+  font-weight: 500;
+}
+
+.alert-success {
+  background-color: #065f46;
+  color: #d1fae5;
+  border: 1px solid #10b981;
+}
+
+.alert-danger {
+  background-color: #7f1d1d;
+  color: #fecaca;
+  border: 1px solid #ef4444;
+}
+
+/* Loading state */
+.btn.loading {
+  position: relative;
+  color: transparent;
+}
+
+.btn.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border: 2px solid #ffffff;
+  border-top: 2px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .dsp-form-container {
+    padding: 1rem;
+  }
+}
+
+/* Hide shipping section initially if same as billing is checked */
+#shipping-section.hidden {
+  display: none;
+}
+
+/* Animation for showing/hiding shipping section */
+#shipping-section {
+  transition: all 0.3s ease;
+}
+
+#shipping-section.visible {
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('dsp-info-form');
+    const sameAsShippingCheckbox = document.getElementById('same_as_shipping');
+    const shippingSection = document.getElementById('shipping-section');
+    const submitBtn = document.getElementById('submit-btn');
+    const clearBtn = document.getElementById('clear-btn');
+    const messageContainer = document.getElementById('message-container');
+
+    // Initialize form state
+    initializeForm();
+
+    // Toggle shipping address visibility
+    sameAsShippingCheckbox.addEventListener('change', function() {
+        toggleShippingAddress();
+    });
+
+    // Form submission
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        handleFormSubmission();
+    });
+
+    // Clear form
+    clearBtn.addEventListener('click', function() {
+        clearForm();
+    });
+
+    // Auto-fill shipping address when checkbox is checked
+    sameAsShippingCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            copyBillingToShipping();
+        }
+    });
+
+    /**
+     * Initialize form with existing data from database
+     */
+    function initializeForm() {
+        console.log('Initializing DSP Info form...');
+        
+        // Set default timezone to current user's timezone if not already set
+        const timezoneSelect = document.getElementById('timezone');
+        if (!timezoneSelect.value) {
+            const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const timezoneOption = Array.from(timezoneSelect.options).find(option => 
+                option.value === userTimezone
+            );
+            if (timezoneOption) {
+                timezoneOption.selected = true;
+            }
+        }
+
+        // Set default start month to current month if not already set
+        const startMonthInput = document.getElementById('start_month');
+        if (!startMonthInput.value) {
+            const currentDate = new Date();
+            const currentMonth = currentDate.getFullYear() + '-' + 
+                String(currentDate.getMonth() + 1).padStart(2, '0');
+            startMonthInput.value = currentMonth;
+        }
+
+        // Initialize shipping address visibility
+        toggleShippingAddress();
+    }
+
+    /**
+     * Toggle shipping address section visibility
+     */
+    function toggleShippingAddress() {
+        const isChecked = sameAsShippingCheckbox.checked;
+        const shippingInputs = shippingSection.querySelectorAll('input, select');
+        
+        if (isChecked) {
+            shippingSection.classList.add('hidden');
+            // Remove required attributes from shipping fields
+            shippingInputs.forEach(input => {
+                input.removeAttribute('required');
+                if (input.type !== 'checkbox') {
+                    input.value = '';
+                }
+            });
+        } else {
+            shippingSection.classList.remove('hidden');
+            shippingSection.classList.add('visible');
+            // Add required attributes back to shipping fields
+            shippingInputs.forEach(input => {
+                if (input.type !== 'checkbox' && 
+                    (input.name === 'shipping_address1' || 
+                     input.name === 'shipping_city' || 
+                     input.name === 'shipping_state' || 
+                     input.name === 'shipping_zip' || 
+                     input.name === 'shipping_phone')) {
+                    input.setAttribute('required', 'required');
+                }
+            });
+        }
+    }
+
+    /**
+     * Copy billing address to shipping address
+     */
+    function copyBillingToShipping() {
+        const billingFields = [
+            'address1', 'address2', 'city', 'state', 'zip', 'phone'
+        ];
+
+        billingFields.forEach(field => {
+            const billingInput = document.getElementById(`billing_${field}`);
+            const shippingInput = document.getElementById(`shipping_${field}`);
+            if (billingInput && shippingInput) {
+                shippingInput.value = billingInput.value;
+            }
+        });
+    }
+
+    /**
+     * Handle form submission
+     */
+    function handleFormSubmission() {
+        // Validate form
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+
+        // Show loading state
+        submitBtn.classList.add('loading');
+        submitBtn.disabled = true;
+
+        // Submit the form (this will use the Flask route)
+        form.submit();
+    }
+
+    /**
+     * Clear form and reset to initial state
+     */
+    function clearForm() {
+        if (confirm('Are you sure you want to clear all form data?')) {
+            form.reset();
+            toggleShippingAddress();
+            hideMessage();
+            console.log('Form cleared');
+        }
+    }
+
+    /**
+     * Show success or error message
+     */
+    function showMessage(message, type) {
+        messageContainer.innerHTML = `
+            <div class="alert alert-${type}">
+                ${message}
+            </div>
+        `;
+        
+        // Auto-hide success messages after 5 seconds
+        if (type === 'success') {
+            setTimeout(() => {
+                hideMessage();
+            }, 5000);
+        }
+    }
+
+    /**
+     * Hide message
+     */
+    function hideMessage() {
+        messageContainer.innerHTML = '';
+    }
+
+    // Form validation enhancements
+    const phoneInputs = document.querySelectorAll('input[type="tel"]');
+    phoneInputs.forEach(input => {
+        input.addEventListener('input', function() {
+            // Format phone number as user types
+            let value = this.value.replace(/\D/g, '');
+            if (value.length >= 6) {
+                value = value.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3');
+            } else if (value.length >= 3) {
+                value = value.replace(/(\d{3})(\d{0,3})/, '($1) $2');
+            }
+            this.value = value;
+        });
+    });
+
+    // Zip code validation
+    const zipInputs = document.querySelectorAll('input[name$="_zip"]');
+    zipInputs.forEach(input => {
+        input.addEventListener('input', function() {
+            let value = this.value.replace(/\D/g, '');
+            if (value.length > 5) {
+                value = value.substring(0, 5) + '-' + value.substring(5, 9);
+            }
+            this.value = value;
+        });
+    });
+
+    // Show success message if redirected from successful save
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('saved') === 'true') {
+        showMessage('DSP settings saved successfully!', 'success');
+    }
+});
+</script>
+{% endblock %}
+
