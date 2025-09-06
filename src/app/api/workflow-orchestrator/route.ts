@@ -176,6 +176,7 @@ export async function POST(request: NextRequest) {
     workflowResult.processingSteps[3].timestamp = new Date().toISOString();
     
     try {
+      // Use shorter timeout for feedback generation
       const feedbackResult = await lyzrAPI.processFeedbackRouting(documentId);
       if (feedbackResult.success) {
         workflowResult.feedbackData = feedbackResult.data;

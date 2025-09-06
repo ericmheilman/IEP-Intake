@@ -27,7 +27,7 @@ class LyzrAPIService {
         'x-api-key': this.apiKey,
         'Content-Type': 'application/json',
       },
-      timeout: 60000, // 60 seconds timeout for processing
+      timeout: 30000, // 30 seconds timeout for processing
     });
 
     // Request interceptor for logging
@@ -322,8 +322,18 @@ class LyzrAPIService {
     try {
       console.log('Calling Feedback & Routing Agent for document:', documentId);
       
+      // Create a custom axios instance with shorter timeout for feedback
+      const feedbackAPI = axios.create({
+        baseURL: this.baseURL,
+        headers: {
+          'x-api-key': this.apiKey,
+          'Content-Type': 'application/json',
+        },
+        timeout: 15000, // 15 seconds timeout for feedback
+      });
+      
       // Use the actual Lyzr agent endpoint
-      const response: AxiosResponse<IEPFeedbackData> = await this.api.post(
+      const response: AxiosResponse<IEPFeedbackData> = await feedbackAPI.post(
         LYZR_AGENTS.FEEDBACK_ROUTING.endpoint,
         {
           user_id: 'iep-processor@university-startups.com',
@@ -409,6 +419,29 @@ class LyzrAPIService {
         success: false,
         error: error.response?.data?.message || 'Failed to get processing status',
       };
+    }
+  }
+
+  // Call Agent with Custom Timeout
+  async callAgent(agentName: string, payload: any, timeoutMs: number = 30000): Promise<any> {
+    try {
+      console.log(`Calling ${agentName} with ${timeoutMs}ms timeout`);
+      
+      // Create a custom axios instance with specified timeout
+      const customAPI = axios.create({
+        baseURL: this.baseURL,
+        headers: {
+          'x-api-key': this.apiKey,
+          'Content-Type': 'application/json',
+        },
+        timeout: timeoutMs,
+      });
+      
+      const response = await customAPI.post('/v3/inference/chat/', payload);
+      return response.data;
+    } catch (error: any) {
+      console.error(`${agentName} failed:`, error.message);
+      throw error;
     }
   }
 
