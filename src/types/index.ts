@@ -113,6 +113,12 @@ export interface IEPFeedbackData {
   feedbackSummary: string;
   detailedFeedback: DetailedFeedback[];
   recommendation: string;
+  // New rubric-based feedback structure
+  overallCompliance: 'Compliant' | 'Non-compliant';
+  rubricScores: RubricScore[];
+  nextSteps?: string[];
+  estimatedRevisionTime?: string;
+  confidence?: number;
 }
 
 export interface DetailedFeedback {
@@ -120,6 +126,28 @@ export interface DetailedFeedback {
   issue: string;
   recommendation: string;
   priority: 'High' | 'Medium' | 'Low';
+}
+
+// New types for Transition Plan Compliance Rubric
+export interface RubricScore {
+  id: string;
+  category: string;
+  subCriteria: SubCriteria[];
+  totalScore: number;
+  maxScore: number;
+  isCompliant: boolean;
+  summary: string;
+  detailedSummary: string;
+}
+
+export interface SubCriteria {
+  id: string;
+  name: string;
+  score: number;
+  maxScore: number;
+  isCompliant: boolean;
+  summary: string;
+  detailedSummary: string;
 }
 
 export interface ProcessingStatus {

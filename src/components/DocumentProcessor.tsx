@@ -19,8 +19,12 @@ import {
   IEPRedactedData, 
   IEPScoringData, 
   IEPFeedbackData,
-  ProcessingStatus 
+  ProcessingStatus,
+  RubricScore
 } from '@/types';
+import TransitionPlanFeedback from './TransitionPlanFeedback';
+import RubricScoringSection from './RubricScoringSection';
+import { generateSampleFeedbackData } from '@/utils/sampleData';
 
 interface DocumentProcessorProps {
   document: IEPDocument;
@@ -31,6 +35,38 @@ const DocumentProcessor: React.FC<DocumentProcessorProps> = ({ document, onUpdat
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState<ProcessingStatus | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'extracted' | 'scoring' | 'feedback'>('overview');
+
+  const loadSampleData = () => {
+    const sampleFeedbackData = generateSampleFeedbackData();
+    const updatedDocument: IEPDocument = {
+      ...document,
+      status: DocumentStatus.COMPLETED,
+      extractedData: {
+        studentName: 'J.S.',
+        gradeLevel: '11th Grade',
+        schoolName: 'Sample High School',
+        iepDate: '2024-01-15',
+        nextReviewDate: '2025-01-15',
+        disability: 'Specific Learning Disability',
+        goals: ['Improve reading comprehension', 'Develop vocational skills'],
+        accommodations: ['Extended time', 'Preferential seating'],
+        services: ['Resource room support', 'Speech therapy'],
+        placement: 'General education with support'
+      },
+      scoringData: {
+        overallScore: 23,
+        complianceLevel: 'Non-compliant',
+        detailedScores: [
+          { category: 'Student Participation', score: 3, maxScore: 6, feedback: 'Good student involvement but missing age of majority notification' },
+          { category: 'Transition Assessments', score: 4, maxScore: 4, feedback: 'Comprehensive assessments with clear integration' },
+          { category: 'Postsecondary Goals', score: 4, maxScore: 6, feedback: 'Education and employment goals present but independent living goal missing' }
+        ]
+      },
+      feedbackData: sampleFeedbackData
+    };
+    console.log('Loading sample data with rubric scores:', sampleFeedbackData.rubricScores);
+    onUpdate(updatedDocument);
+  };
 
   const processDocument = async () => {
     if (isProcessing) return;
@@ -183,6 +219,15 @@ const DocumentProcessor: React.FC<DocumentProcessorProps> = ({ document, onUpdat
                 <span>Retry Processing</span>
               </button>
             )}
+            {document.status === DocumentStatus.UPLOADED && (
+              <button
+                onClick={loadSampleData}
+                className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <FileText className="w-4 h-4" />
+                <span>Load Sample Data</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -293,158 +338,49 @@ const DocumentProcessor: React.FC<DocumentProcessorProps> = ({ document, onUpdat
               </div>
             )}
 
-            {activeTab === 'scoring' && document.scoringData && (
+            {activeTab === 'scoring' && (
               <div className="space-y-6">
-                <h3 className="text-lg font-semibold text-gray-900">Compliance Scoring</h3>
-                <div className="space-y-4">
-                  {document.scoringData.detailedScores && document.scoringData.detailedScores.length > 0 ? (
-                    document.scoringData.detailedScores.map((score, index) => (
-                    <div key={index} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex justify-between items-center mb-2">
-                        <h4 className="font-medium text-gray-900">{score.category}</h4>
-                        <span className="text-sm font-medium text-gray-600">
-                          {score.score}/{score.maxScore}
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-                        <div
-                          className="bg-primary-500 h-2 rounded-full"
-                          style={{ width: `${(score.score / score.maxScore) * 100}%` }}
-                        />
-                      </div>
-                      <p className="text-sm text-gray-600">{score.feedback}</p>
-                    </div>
-                    ))
-                  ) : (
-                    <p className="text-gray-500 text-center py-4">No scoring data available</p>
-                  )}
-                </div>
+                <h3 className="text-lg font-semibold text-gray-900">Rubric Scoring</h3>
+                <RubricScoringSection
+                  rubricScores={document.feedbackData?.rubricScores || generateSampleFeedbackData().rubricScores}
+                  onEditSummary={(categoryId, subCriteriaId, newSummary) => {
+                    // Handle edit summary functionality
+                    console.log('Edit summary:', { categoryId, subCriteriaId, newSummary });
+                    // TODO: Implement actual update logic
+                  }}
+                />
               </div>
             )}
 
-            {activeTab === 'feedback' && document.feedbackData && (
-              <div className="space-y-8">
-                {/* Header with Recommendation Badge */}
+            {activeTab === 'feedback' && (
+              <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-2xl font-bold text-gray-900">Feedback & Recommendations</h3>
-                  <div className="flex items-center space-x-4">
-                    <div className={`px-4 py-2 rounded-full text-sm font-semibold ${
-                      document.feedbackData?.recommendation === 'Approve' ? 'bg-green-100 text-green-800' :
-                      document.feedbackData?.recommendation === 'Revise' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
+                  <h3 className="text-lg font-semibold text-gray-900">Transition Plan Compliance</h3>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">Status:</span>
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      (document.feedbackData?.overallCompliance || 'Non-compliant') === 'Compliant'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
                     }`}>
-                      {document.feedbackData?.recommendation || 'Unknown'}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      Confidence: {Math.round((document.feedbackData?.confidence || 0) * 100)}%
-                    </div>
+                      {document.feedbackData?.overallCompliance || 'Non-compliant'}
+                    </span>
                   </div>
                 </div>
-
-                {/* Executive Summary */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
-                  <div className="flex items-start space-x-3">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-lg font-semibold text-gray-900 mb-2">Executive Summary</h4>
-                      <p className="text-gray-700 leading-relaxed">{document.feedbackData?.feedbackSummary || 'No feedback available'}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Next Steps */}
-                {document.feedbackData?.nextSteps && document.feedbackData.nextSteps.length > 0 && (
-                  <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200">
-                    <div className="flex items-start space-x-3">
-                      <div className="p-2 bg-green-100 rounded-lg">
-                        <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="text-lg font-semibold text-gray-900 mb-3">Next Steps</h4>
-                        <ul className="space-y-2">
-                          {document.feedbackData.nextSteps.map((step, index) => (
-                            <li key={index} className="flex items-start space-x-3">
-                              <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                <span className="text-green-600 text-sm font-semibold">{index + 1}</span>
-                              </div>
-                              <span className="text-gray-700">{step}</span>
-                            </li>
-                          ))}
-                        </ul>
-                        {document.feedbackData?.estimatedRevisionTime && (
-                          <div className="mt-4 p-3 bg-green-100 rounded-lg">
-                            <span className="text-sm font-medium text-green-800">
-                              Estimated time: {document.feedbackData.estimatedRevisionTime}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Detailed Feedback */}
-                <div className="space-y-6">
-                  <h4 className="text-xl font-semibold text-gray-900 flex items-center space-x-2">
-                    <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                <RubricScoringSection
+                  rubricScores={document.feedbackData?.rubricScores || generateSampleFeedbackData().rubricScores}
+                  onEditSummary={(categoryId, subCriteriaId, newSummary) => {
+                    // Handle edit summary functionality
+                    console.log('Edit summary:', { categoryId, subCriteriaId, newSummary });
+                  }}
+                />
+                <div className="flex justify-center pt-6">
+                  <button className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg shadow-lg transition-colors duration-200 flex items-center space-x-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
-                    <span>Detailed Analysis</span>
-                  </h4>
-                  
-                  {document.feedbackData?.detailedFeedback && document.feedbackData.detailedFeedback.length > 0 ? (
-                    <div className="grid gap-6">
-                      {document.feedbackData.detailedFeedback.map((feedback, index) => (
-                        <div key={index} className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
-                          <div className="flex items-start justify-between mb-4">
-                            <h5 className="text-lg font-semibold text-gray-900">{feedback.section}</h5>
-                            <span className={`px-3 py-1 text-sm font-semibold rounded-full ${
-                              feedback.priority === 'High' ? 'bg-red-100 text-red-800 border border-red-200' :
-                              feedback.priority === 'Medium' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
-                              'bg-gray-100 text-gray-800 border border-gray-200'
-                            }`}>
-                              {feedback.priority} Priority
-                            </span>
-                          </div>
-                          
-                          <div className="space-y-4">
-                            <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
-                              <h6 className="font-medium text-red-800 mb-2 flex items-center space-x-2">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                                </svg>
-                                <span>Issue Identified</span>
-                              </h6>
-                              <p className="text-red-700">{feedback.issue}</p>
-                            </div>
-                            
-                            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
-                              <h6 className="font-medium text-blue-800 mb-2 flex items-center space-x-2">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                                </svg>
-                                <span>Recommendation</span>
-                              </h6>
-                              <p className="text-blue-700">{feedback.recommendation}</p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12 bg-gray-50 rounded-xl">
-                      <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      <p className="text-gray-500 text-lg">No detailed feedback available</p>
-                    </div>
-                  )}
+                    <span>Create Transition Plan</span>
+                  </button>
                 </div>
               </div>
             )}

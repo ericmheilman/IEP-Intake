@@ -27,7 +27,7 @@ class LyzrAPIService {
         'x-api-key': this.apiKey,
         'Content-Type': 'application/json',
       },
-      timeout: 30000, // 30 seconds timeout for processing
+      timeout: 60000, // 60 seconds timeout for processing
     });
 
     // Request interceptor for logging
@@ -329,7 +329,7 @@ class LyzrAPIService {
           'x-api-key': this.apiKey,
           'Content-Type': 'application/json',
         },
-        timeout: 15000, // 15 seconds timeout for feedback
+        timeout: 60000, // 60 seconds timeout for feedback
       });
       
       // Use the actual Lyzr agent endpoint
@@ -423,7 +423,7 @@ class LyzrAPIService {
   }
 
   // Call Agent with Custom Timeout
-  async callAgent(agentName: string, payload: any, timeoutMs: number = 30000): Promise<any> {
+  async callAgent(agentName: string, payload: any, timeoutMs: number = 60000): Promise<any> {
     try {
       console.log(`Calling ${agentName} with ${timeoutMs}ms timeout`);
       
