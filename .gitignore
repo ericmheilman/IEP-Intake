@@ -1,2 +1,7 @@
 node_modules/
 .next/
+
+# Test files and uploads
+agentic_test_response_*.json
+kelly_dalton_iep_*.pdf
+test_*.py
