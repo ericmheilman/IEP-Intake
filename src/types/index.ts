@@ -171,3 +171,27 @@ export interface AgentConfig {
   description: string;
   processingTime: number;
 }
+
+// New types for the actual API response format
+export interface IndicatorEvaluation {
+  indicator: string;
+  description: string;
+  compliance_rating: 'Y' | 'N';
+  quality_rating: number;
+  justification: string;
+}
+
+export interface StudentInfo {
+  name: string;
+  age: number;
+  school_district: string;
+  review_date: string;
+}
+
+export interface IEPAnalysisResponse {
+  student_info: StudentInfo;
+  indicator_evaluations: IndicatorEvaluation[];
+  total_quality_score: number;
+  overall_compliance: 'Compliant' | 'Non-Compliant';
+  notes: string;
+}

@@ -37,6 +37,11 @@ const DocumentProcessor: React.FC<DocumentProcessorProps> = ({ document, onUpdat
   const [activeTab, setActiveTab] = useState<'overview' | 'extracted' | 'scoring' | 'feedback'>('overview');
 
   const loadSampleData = () => {
+    // Only load sample data if no real data is available
+    if (document.feedbackData?.rubricScores?.length > 0) {
+      return; // Already has real data
+    }
+    
     const sampleFeedbackData = generateSampleFeedbackData();
     const updatedDocument: IEPDocument = {
       ...document,
