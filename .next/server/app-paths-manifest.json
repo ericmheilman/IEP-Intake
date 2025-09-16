@@ -1,3 +1,3 @@
 {
-  "/api/workflow-orchestrator/route": "app/api/workflow-orchestrator/route.js"
+  "/page": "app/page.js"
 }

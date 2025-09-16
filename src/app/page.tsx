@@ -5,6 +5,7 @@ import { Upload, FileText, BarChart3, Settings } from 'lucide-react';
 import FileUpload from '@/components/FileUpload';
 import Dashboard from '@/components/Dashboard';
 import DocumentProcessor from '@/components/DocumentProcessor';
+import Logo from '@/components/Logo';
 import { IEPDocument, DocumentStatus, FileUploadResult } from '@/types';
 
 export default function HomePage() {
@@ -86,10 +87,8 @@ export default function HomePage() {
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-4">
-              <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl">
-                <FileText className="w-8 h-8 text-white" />
-              </div>
-              <div>
+              <Logo size="lg" showText={true} />
+              <div className="border-l border-gray-300 pl-4">
                 <h1 className="text-2xl font-bold text-gray-900">IEP Processor</h1>
                 <p className="text-sm text-gray-600">AI-Powered Document Analysis</p>
               </div>
@@ -133,6 +132,9 @@ export default function HomePage() {
           <div className="space-y-8">
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
               <div className="text-center mb-8">
+                <div className="flex justify-center mb-6">
+                  <Logo size="lg" showText={true} />
+                </div>
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl mb-4">
                   <Upload className="w-8 h-8 text-white" />
                 </div>
