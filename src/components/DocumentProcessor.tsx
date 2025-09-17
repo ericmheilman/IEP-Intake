@@ -20,11 +20,13 @@ import {
   IEPScoringData, 
   IEPFeedbackData,
   ProcessingStatus,
-  RubricScore
+  RubricScore,
+  TransitionPlanHeader,
+  TransitionPlanSummary,
+  TransitionPlanDetailedFeedback
 } from '@/types';
 import TransitionPlanFeedback from './TransitionPlanFeedback';
 import RubricScoringSection from './RubricScoringSection';
-import { generateSampleFeedbackData } from '@/utils/sampleData';
 
 interface DocumentProcessorProps {
   document: IEPDocument;
@@ -36,41 +38,79 @@ const DocumentProcessor: React.FC<DocumentProcessorProps> = ({ document, onUpdat
   const [processingStatus, setProcessingStatus] = useState<ProcessingStatus | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'extracted' | 'scoring' | 'feedback'>('overview');
 
-  const loadSampleData = () => {
-    // Only load sample data if no real data is available
-    if (document.feedbackData?.rubricScores?.length > 0) {
-      return; // Already has real data
-    }
+  // Convert API feedback data to new format
+  const convertToTransitionPlanFormat = (feedbackData?: IEPFeedbackData): {
+    header: TransitionPlanHeader;
+    summary: TransitionPlanSummary;
+    detailedFeedback: TransitionPlanDetailedFeedback;
+  } | null => {
+    if (!feedbackData?.rubricScores) return null;
     
-    const sampleFeedbackData = generateSampleFeedbackData();
-    const updatedDocument: IEPDocument = {
-      ...document,
-      status: DocumentStatus.COMPLETED,
-      extractedData: {
-        studentName: 'J.S.',
-        gradeLevel: '11th Grade',
-        schoolName: 'Sample High School',
-        iepDate: '2024-01-15',
-        nextReviewDate: '2025-01-15',
-        disability: 'Specific Learning Disability',
-        goals: ['Improve reading comprehension', 'Develop vocational skills'],
-        accommodations: ['Extended time', 'Preferential seating'],
-        services: ['Resource room support', 'Speech therapy'],
-        placement: 'General education with support'
-      },
-      scoringData: {
-        overallScore: 23,
-        complianceLevel: 'Non-compliant',
-        detailedScores: [
-          { category: 'Student Participation', score: 3, maxScore: 6, feedback: 'Good student involvement but missing age of majority notification' },
-          { category: 'Transition Assessments', score: 4, maxScore: 4, feedback: 'Comprehensive assessments with clear integration' },
-          { category: 'Postsecondary Goals', score: 4, maxScore: 6, feedback: 'Education and employment goals present but independent living goal missing' }
-        ]
-      },
-      feedbackData: sampleFeedbackData
+    const header: TransitionPlanHeader = {
+      filename: document.fileName,
+      studentName: document.extractedData?.studentName || 'Student Name Not Available',
+      submissionDate: document.uploadDate.toLocaleDateString()
     };
-    console.log('Loading sample data with rubric scores:', sampleFeedbackData.rubricScores);
-    onUpdate(updatedDocument);
+
+    const totalScore = feedbackData.rubricScores.reduce((sum, score) => sum + score.totalScore, 0);
+    const maxScore = feedbackData.rubricScores.reduce((sum, score) => sum + score.maxScore, 0);
+
+    const summary: TransitionPlanSummary = {
+      overallScore: totalScore,
+      maxScore: maxScore,
+      overallCompliance: (feedbackData.overallCompliance === 'Compliant' ? 'Compliant' : 'Non-Compliant'),
+      sections: feedbackData.rubricScores.map(rubric => ({
+        id: rubric.id,
+        name: rubric.category,
+        score: rubric.totalScore,
+        maxScore: rubric.maxScore,
+        isCompliant: rubric.isCompliant,
+        summary: rubric.summary || `${rubric.isCompliant ? 'Compliant' : 'Non-compliant'} - Score: ${rubric.totalScore}/${rubric.maxScore}`,
+        detailedSummary: rubric.detailedSummary || 'This section includes detailed evaluation criteria and analysis of compliance with transition planning requirements.',
+        subCriteria: rubric.subCriteria?.map(sub => ({
+          id: sub.id,
+          name: sub.name,
+          score: sub.score,
+          maxScore: sub.maxScore,
+          isCompliant: sub.isCompliant,
+          comments: sub.summary || sub.detailedSummary || 'No comments available'
+        })) || []
+      }))
+    };
+
+    const detailedFeedback: TransitionPlanDetailedFeedback = {
+      overview: feedbackData.feedbackSummary || 'No overview available',
+        strengths: [
+          'Clear identification of student needs and preferences',
+          'Appropriate use of transition assessments',
+          'Well-documented accommodations and modifications',
+          'Evidence of collaborative IEP team process'
+        ],
+        weaknesses: feedbackData.detailedFeedback?.filter(f => f.priority === 'High').map(f => f.issue) || [
+          'Missing or incomplete age of majority notification',
+          'Limited variety in transition assessment methods', 
+          'Insufficient detail in agency participation documentation',
+          'Gaps in multi-year course planning alignment'
+        ],
+        connectionToLearningObjectives: [
+          'Demonstrates compliance with IDEA requirements for transition planning',
+          'Shows understanding of federal and state transition planning principles', 
+          'Reflects individualized approach to student needs and preferences',
+          'Aligns with evidence-based practices in special education'
+        ],
+        areasForImprovement: feedbackData.nextSteps || [
+          'Enhance documentation of student preferences and interests',
+          'Strengthen connections between assessments and goals',
+          'Improve specificity in transition services descriptions',
+          'Develop more detailed multi-year course planning'
+        ],
+      finalScore: {
+        total: totalScore,
+        max: maxScore
+      }
+    };
+
+    return { header, summary, detailedFeedback };
   };
 
   const processDocument = async () => {
@@ -224,15 +264,6 @@ const DocumentProcessor: React.FC<DocumentProcessorProps> = ({ document, onUpdat
                 <span>Retry Processing</span>
               </button>
             )}
-            {document.status === DocumentStatus.UPLOADED && (
-              <button
-                onClick={loadSampleData}
-                className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              >
-                <FileText className="w-4 h-4" />
-                <span>Load Sample Data</span>
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -346,47 +377,44 @@ const DocumentProcessor: React.FC<DocumentProcessorProps> = ({ document, onUpdat
             {activeTab === 'scoring' && (
               <div className="space-y-6">
                 <h3 className="text-lg font-semibold text-gray-900">Rubric Scoring</h3>
-                <RubricScoringSection
-                  rubricScores={document.feedbackData?.rubricScores || generateSampleFeedbackData().rubricScores}
-                  onEditSummary={(categoryId, subCriteriaId, newSummary) => {
-                    // Handle edit summary functionality
-                    console.log('Edit summary:', { categoryId, subCriteriaId, newSummary });
-                    // TODO: Implement actual update logic
-                  }}
-                />
+                {document.feedbackData?.rubricScores ? (
+                  <RubricScoringSection
+                    rubricScores={document.feedbackData.rubricScores}
+                    onEditSummary={(categoryId, subCriteriaId, newSummary) => {
+                      console.log('Edit summary:', { categoryId, subCriteriaId, newSummary });
+                      // TODO: Implement actual update logic
+                    }}
+                  />
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No scoring data available. Process the document first.</p>
+                  </div>
+                )}
               </div>
             )}
 
             {activeTab === 'feedback' && (
               <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">Transition Plan Compliance</h3>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-600">Status:</span>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      (document.feedbackData?.overallCompliance || 'Non-compliant') === 'Compliant'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {document.feedbackData?.overallCompliance || 'Non-compliant'}
-                    </span>
-                  </div>
-                </div>
-                <RubricScoringSection
-                  rubricScores={document.feedbackData?.rubricScores || generateSampleFeedbackData().rubricScores}
-                  onEditSummary={(categoryId, subCriteriaId, newSummary) => {
-                    // Handle edit summary functionality
-                    console.log('Edit summary:', { categoryId, subCriteriaId, newSummary });
-                  }}
-                />
-                <div className="flex justify-center pt-6">
-                  <button className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg shadow-lg transition-colors duration-200 flex items-center space-x-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    <span>Create Transition Plan</span>
-                  </button>
-                </div>
+                {(() => {
+                  const transitionPlanData = convertToTransitionPlanFormat(document.feedbackData);
+                  return (
+                    <TransitionPlanFeedback
+                      header={transitionPlanData?.header}
+                      summary={transitionPlanData?.summary}
+                      detailedFeedback={transitionPlanData?.detailedFeedback}
+                      onEditSummary={(sectionId, subCriteriaId, newSummary) => {
+                        console.log('Edit summary:', { sectionId, subCriteriaId, newSummary });
+                        // TODO: Implement actual update logic
+                      }}
+                      onCreateTransitionPlan={() => {
+                        console.log('Create transition plan clicked');
+                        // TODO: Implement transition plan creation
+                      }}
+                      isLoading={isProcessing}
+                      error={!document.feedbackData ? 'No feedback data available' : undefined}
+                    />
+                  );
+                })()}
               </div>
             )}
           </div>

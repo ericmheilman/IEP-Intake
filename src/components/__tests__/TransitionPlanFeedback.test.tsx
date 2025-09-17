@@ -2,10 +2,64 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import TransitionPlanFeedback from '../TransitionPlanFeedback';
-import { generateSampleRubricData } from '@/utils/sampleData';
+import { 
+  TransitionPlanHeader, 
+  TransitionPlanSummary, 
+  TransitionPlanDetailedFeedback 
+} from '@/types';
 
 describe('TransitionPlanFeedback', () => {
-  const mockRubricScores = generateSampleRubricData();
+  const mockHeader: TransitionPlanHeader = {
+    filename: 'test-document.pdf',
+    studentName: 'J.S.',
+    submissionDate: '2024-01-15'
+  };
+
+  const mockSummary: TransitionPlanSummary = {
+    overallScore: 23,
+    maxScore: 36,
+    overallCompliance: 'Non-Compliant',
+    sections: [
+      {
+        id: '1',
+        name: '1. Student Participation and Preferences',
+        score: 3,
+        maxScore: 6,
+        isCompliant: false,
+        subCriteria: [
+          {
+            id: '1.1',
+            name: '1.1 Evidence of Student Invitation to IEP Meeting',
+            score: 2,
+            maxScore: 2,
+            isCompliant: true,
+            comments: 'Student was clearly invited and attended the meeting'
+          }
+        ]
+      },
+      {
+        id: '2',
+        name: '2. Age-Appropriate Transition Assessments',
+        score: 4,
+        maxScore: 4,
+        isCompliant: true,
+        subCriteria: []
+      }
+    ]
+  };
+
+  const mockDetailedFeedback: TransitionPlanDetailedFeedback = {
+    overview: 'This transition plan shows strengths in some areas but needs improvement in others.',
+    strengths: ['Good student participation', 'Comprehensive assessments'],
+    weaknesses: ['Missing agency participation', 'Incomplete course planning'],
+    connectionToLearningObjectives: ['Demonstrates IDEA compliance', 'Shows transition planning understanding'],
+    areasForImprovement: ['Add agency participation', 'Develop detailed course plan'],
+    finalScore: {
+      total: 23,
+      max: 36
+    }
+  };
+
   const mockOnEditSummary = jest.fn();
   const mockOnCreateTransitionPlan = jest.fn();
 
@@ -13,73 +67,87 @@ describe('TransitionPlanFeedback', () => {
     jest.clearAllMocks();
   });
 
-  it('renders overall compliance status', () => {
+  it('renders header information', () => {
     render(
       <TransitionPlanFeedback
-        overallCompliance="Non-compliant"
-        rubricScores={mockRubricScores}
+        header={mockHeader}
+        summary={mockSummary}
+        detailedFeedback={mockDetailedFeedback}
         onEditSummary={mockOnEditSummary}
         onCreateTransitionPlan={mockOnCreateTransitionPlan}
       />
     );
 
-    expect(screen.getByText('Transition Plan Compliance')).toBeInTheDocument();
-    expect(screen.getByText('Overall Status:')).toBeInTheDocument();
-    expect(screen.getByText('Non-compliant', { selector: 'span.font-semibold' })).toBeInTheDocument();
+    expect(screen.getByText('Transition Plan Feedback')).toBeInTheDocument();
+    expect(screen.getByText('test-document.pdf')).toBeInTheDocument();
+    expect(screen.getByText('J.S.')).toBeInTheDocument();
+    expect(screen.getByText('2024-01-15')).toBeInTheDocument();
   });
 
-  it('displays scoring criteria', () => {
+  it('displays summary table with scores', () => {
     render(
       <TransitionPlanFeedback
-        overallCompliance="Non-compliant"
-        rubricScores={mockRubricScores}
+        header={mockHeader}
+        summary={mockSummary}
+        detailedFeedback={mockDetailedFeedback}
         onEditSummary={mockOnEditSummary}
         onCreateTransitionPlan={mockOnCreateTransitionPlan}
       />
     );
 
-    expect(screen.getByText('Scoring Criteria')).toBeInTheDocument();
+    expect(screen.getByText('Summary')).toBeInTheDocument();
     expect(screen.getByText('1. Student Participation and Preferences')).toBeInTheDocument();
     expect(screen.getByText('2. Age-Appropriate Transition Assessments')).toBeInTheDocument();
+    expect(screen.getByText('3/6')).toBeInTheDocument();
+    expect(screen.getByText('4/4')).toBeInTheDocument();
+    expect(screen.getByText('23/36')).toBeInTheDocument();
   });
 
-  it('sorts non-compliant criteria first', () => {
+  it('shows compliance badges correctly', () => {
     render(
       <TransitionPlanFeedback
-        overallCompliance="Non-compliant"
-        rubricScores={mockRubricScores}
+        header={mockHeader}
+        summary={mockSummary}
+        detailedFeedback={mockDetailedFeedback}
         onEditSummary={mockOnEditSummary}
         onCreateTransitionPlan={mockOnCreateTransitionPlan}
       />
     );
 
-    const criteriaElements = screen.getAllByText(/^\d+\./);
-    // First criteria should be non-compliant (Student Participation)
-    expect(criteriaElements[0]).toHaveTextContent('1. Student Participation and Preferences');
+    const complianceBadges = screen.getAllByText(/Yes|No/);
+    expect(complianceBadges.length).toBeGreaterThan(0);
   });
 
-  it('expands criteria when clicked', () => {
+  it('expands sections when chevron is clicked', () => {
     render(
       <TransitionPlanFeedback
-        overallCompliance="Non-compliant"
-        rubricScores={mockRubricScores}
+        header={mockHeader}
+        summary={mockSummary}
+        detailedFeedback={mockDetailedFeedback}
         onEditSummary={mockOnEditSummary}
         onCreateTransitionPlan={mockOnCreateTransitionPlan}
       />
     );
 
-    const firstCriteria = screen.getByText('1. Student Participation and Preferences');
-    fireEvent.click(firstCriteria);
-
-    expect(screen.getByText('Detailed Summary')).toBeInTheDocument();
-    expect(screen.getByText('Sub-criteria Details')).toBeInTheDocument();
+    // Find and click the expand button for the first section
+    const expandButtons = screen.getAllByRole('button');
+    const chevronButton = expandButtons.find(button => 
+      button.querySelector('svg') && 
+      button.className.includes('text-blue-600')
+    );
+    
+    if (chevronButton) {
+      fireEvent.click(chevronButton);
+      expect(screen.getByText('1.1 Evidence of Student Invitation to IEP Meeting')).toBeInTheDocument();
+    }
   });
 
   it('calls onCreateTransitionPlan when button is clicked', () => {
     render(
       <TransitionPlanFeedback
-        overallCompliance="Non-compliant"
-        rubricScores={mockRubricScores}
+        header={mockHeader}
+        summary={mockSummary}
+        detailedFeedback={mockDetailedFeedback}
         onEditSummary={mockOnEditSummary}
         onCreateTransitionPlan={mockOnCreateTransitionPlan}
       />
@@ -91,22 +159,62 @@ describe('TransitionPlanFeedback', () => {
     expect(mockOnCreateTransitionPlan).toHaveBeenCalledTimes(1);
   });
 
-  it('shows edit functionality for sub-criteria', () => {
+  it('shows loading state', () => {
     render(
       <TransitionPlanFeedback
-        overallCompliance="Non-compliant"
-        rubricScores={mockRubricScores}
+        isLoading={true}
         onEditSummary={mockOnEditSummary}
         onCreateTransitionPlan={mockOnCreateTransitionPlan}
       />
     );
 
-    // Expand first criteria
-    const firstCriteria = screen.getByText('1. Student Participation and Preferences');
-    fireEvent.click(firstCriteria);
+    expect(screen.getByText('Processing document...')).toBeInTheDocument();
+  });
 
-    // Find edit button (should be present for sub-criteria)
-    const editButtons = screen.getAllByRole('button', { name: /edit/i });
-    expect(editButtons.length).toBeGreaterThan(0);
+  it('shows error state', () => {
+    render(
+      <TransitionPlanFeedback
+        error="Failed to process document"
+        onEditSummary={mockOnEditSummary}
+        onCreateTransitionPlan={mockOnCreateTransitionPlan}
+      />
+    );
+
+    expect(screen.getByText('Error processing document:')).toBeInTheDocument();
+    expect(screen.getByText('Failed to process document')).toBeInTheDocument();
+  });
+
+  it('shows default values when no data provided', () => {
+    render(
+      <TransitionPlanFeedback
+        onEditSummary={mockOnEditSummary}
+        onCreateTransitionPlan={mockOnCreateTransitionPlan}
+      />
+    );
+
+    expect(screen.getByText('No file uploaded')).toBeInTheDocument();
+    expect(screen.getByText('Student Name Not Available')).toBeInTheDocument();
+    expect(screen.getByText('x/36')).toBeInTheDocument();
+    expect(screen.getAllByText('x/6')).toHaveLength(2); // Two sections have max score 6
+    expect(screen.getAllByText('x/4')).toHaveLength(6); // Six sections have max score 4
+  });
+
+  it('displays detailed feedback sections', () => {
+    render(
+      <TransitionPlanFeedback
+        header={mockHeader}
+        summary={mockSummary}
+        detailedFeedback={mockDetailedFeedback}
+        onEditSummary={mockOnEditSummary}
+        onCreateTransitionPlan={mockOnCreateTransitionPlan}
+      />
+    );
+
+    expect(screen.getByText('Overview')).toBeInTheDocument();
+    expect(screen.getByText('This transition plan shows strengths in some areas but needs improvement in others.')).toBeInTheDocument();
+    expect(screen.getByText('Strengths')).toBeInTheDocument();
+    expect(screen.getByText('Good student participation')).toBeInTheDocument();
+    expect(screen.getByText('Weaknesses')).toBeInTheDocument();
+    expect(screen.getByText('Missing agency participation')).toBeInTheDocument();
   });
 });

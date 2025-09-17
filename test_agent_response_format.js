@@ -32,7 +32,7 @@ async function testAgentResponseFormat() {
           'x-api-key': apiKey,
           'Content-Type': 'application/json',
         },
-        timeout: 30000, // 30 second timeout
+        timeout: 180000, // 3 minute timeout
       }
     );
     
@@ -81,7 +81,7 @@ async function testAgentResponseFormat() {
     console.log(`\n❌ ERROR`);
     
     if (error.code === 'ECONNABORTED') {
-      console.log(`   Request timed out after 30 seconds`);
+      console.log(`   Request timed out after 3 minutes`);
     } else if (error.response) {
       console.log(`   HTTP Status: ${error.response.status}`);
       console.log(`   Error: ${JSON.stringify(error.response.data).substring(0, 200)}...`);

@@ -7,6 +7,9 @@ export interface IEPDocument {
   extractedData?: any;
   complianceScore?: number;
   feedback?: string;
+  feedbackData?: IEPFeedbackData;
+  scoringData?: IEPScoringData;
+  redactedData?: IEPRedactedData;
   processingSteps?: ProcessingStep[];
 }
 
@@ -88,12 +91,14 @@ export interface IEPExtractedData {
   accommodations: string[];
   services: string[];
   placement: string;
+  rawResponse?: string;
 }
 
 export interface IEPRedactedData {
   redactedText: string;
   redactedFields: string[];
   confidence: number;
+  rawResponse?: string;
 }
 
 export interface IEPScoringData {
@@ -119,6 +124,7 @@ export interface IEPFeedbackData {
   nextSteps?: string[];
   estimatedRevisionTime?: string;
   confidence?: number;
+  rawResponse?: string;
 }
 
 export interface DetailedFeedback {
@@ -194,4 +200,50 @@ export interface IEPAnalysisResponse {
   total_quality_score: number;
   overall_compliance: 'Compliant' | 'Non-Compliant';
   notes: string;
+}
+
+// New interfaces for 36-point Transition Plan Feedback system
+export interface TransitionPlanHeader {
+  filename: string;
+  studentName: string;
+  submissionDate: string;
+}
+
+export interface TransitionPlanSummary {
+  overallScore: number;
+  maxScore: number;
+  overallCompliance: 'Compliant' | 'Non-Compliant';
+  sections: TransitionPlanSection[];
+}
+
+export interface TransitionPlanSection {
+  id: string;
+  name: string;
+  score: number | string; // Allow 'x' for missing data
+  maxScore: number;
+  isCompliant: boolean;
+  summary?: string;
+  detailedSummary?: string;
+  subCriteria: TransitionPlanSubCriteria[];
+}
+
+export interface TransitionPlanSubCriteria {
+  id: string;
+  name: string;
+  score: number | string; // Allow 'x' for missing data
+  maxScore: number;
+  isCompliant: boolean;
+  comments: string;
+}
+
+export interface TransitionPlanDetailedFeedback {
+  overview: string;
+  strengths: string[];
+  weaknesses: string[];
+  connectionToLearningObjectives: string[];
+  areasForImprovement: string[];
+  finalScore: {
+    total: number | string;
+    max: number;
+  };
 }

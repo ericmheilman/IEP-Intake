@@ -5,3 +5,9 @@ node_modules/
 agentic_test_response_*.json
 kelly_dalton_iep_*.pdf
 test_*.py
+
+# Logs and debugging
+logs/
+*.log
+debug_screenshot_*.png
+iep_test.log
